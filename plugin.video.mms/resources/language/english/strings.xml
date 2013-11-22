@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+    <!-- Settings -->
+    <string id="31000">Settings</string>
+    <string id="31001">File Extensions</string>
+    <string id="31002">Log Missing</string>
+	<string id="31003">Log Missing To</string>
+    <string id="31004">Blacklisted Words</string>
+    <string id="31005">Debug Logging</string>
+</strings>
+
