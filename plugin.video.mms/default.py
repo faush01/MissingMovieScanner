@@ -7,8 +7,11 @@ import json
 import os
 import time
 import datetime
-from xbmcaddon import Addon
+import xbmcaddon
 from traceback import print_exc
+
+__settings__ = xbmcaddon.Addon(id='plugin.video.mms')
+language = __settings__.getLocalizedString
 
 LOG_ENABLED = False
 DEBUG_LOGGING = False
@@ -29,10 +32,6 @@ PARAMETER_KEY_SOURCE = "source"
 dirCount = 0
 fileCount = 0
 filesFound = 0
-
-ADDON = Addon( "plugin.video.mms" )
-REPO_PACKAGE_DIR = "special://home/addons/packages/"
-REPO_INSTALL_DIR = "special://home/addons/"
 
 #############################################################################################
 # Functions
@@ -145,9 +144,9 @@ def walk_Path(path, walked_files, progress):
     global fileCount
     global filesFound
     
-    count_text = "Scanned : " + str(dirCount) + " Directories " + str(fileCount) + "  Files"
-    found_text = "Files Found : " + str(filesFound)
-    hacked_path = "Path: " + path
+    count_text = language(30105).format(str(dirCount), str(fileCount))
+    found_text = language(30107).format(str(filesFound))
+    hacked_path = language(30108).format(path)
     progress.update(0, count_text, found_text, hacked_path)
     #time.sleep(5)
     
@@ -174,7 +173,7 @@ def walk_Path(path, walked_files, progress):
         return
     
     if(set_files.get('error') != None):
-        xbmcgui.Dialog().ok("Source Path Error", "Error walking the source path.", str(set_files.get('error')))
+        xbmcgui.Dialog().ok(language(30109), language(30110), str(set_files.get('error')))
         log("Error walking the source path: " + str(set_files.get('error')))
         return
     
@@ -258,12 +257,9 @@ def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1):
 
 def show_root_menu():
 
-    #disable version check for now
-    #version_check()
-    
-    addDirectoryItem(name="Autoscan Movie Sources", parameters={ PARAMETER_KEY_MODE: MODE_AUTO_MOVIE_SOURCES }, isFolder=True)
-    addDirectoryItem(name="Autoscan TV Sources", parameters={ PARAMETER_KEY_MODE: MODE_AUTO_TV_SOURCES }, isFolder=True)
-    addDirectoryItem(name="Show Source Paths", parameters={ PARAMETER_KEY_MODE: MODE_SHOW_SOURCES }, isFolder=True)
+    addDirectoryItem(name=language(30111), parameters={ PARAMETER_KEY_MODE: MODE_AUTO_MOVIE_SOURCES }, isFolder=True)
+    addDirectoryItem(name=language(30112), parameters={ PARAMETER_KEY_MODE: MODE_AUTO_TV_SOURCES }, isFolder=True)
+    addDirectoryItem(name=language(30113), parameters={ PARAMETER_KEY_MODE: MODE_SHOW_SOURCES }, isFolder=True)
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
     
@@ -282,7 +278,8 @@ def get_library_files(type_of_scan):
         movies = movies.get('movies')
         
         if(movies == None):
-            xbmcgui.Dialog().ok("No Movies Found", "There are no movies in your library")
+            if type_of_scan == 1:
+                xbmcgui.Dialog().ok(language(30114), language(30115))
             movies = []	
         
         for m in movies:
@@ -304,7 +301,8 @@ def get_library_files(type_of_scan):
         tvshows = tvshows.get('episodes')
         
         if(tvshows == None):
-            xbmcgui.Dialog().ok("No TV Episodes Found", "There are no TV Episodes in your library")
+            if type_of_scan == 2:
+                xbmcgui.Dialog().ok(language(30116), language(30117))
             tvshows = []	
 
         for t in tvshows:
@@ -411,8 +409,8 @@ def scan_movie_source(source_path, type_of_scan):
     xbmc.executebuiltin( "Dialog.Close(busydialog)" )
     
     progress = xbmcgui.DialogProgress()
-    progress.create("Scan Running", "Scan Started")
-    progress.update(0, "Getting Library Movies")
+    progress.create(language(30118), language(30119))
+    progress.update(0, language(30120))
 
     #get library files
     library_files = get_library_files(type_of_scan)
@@ -430,7 +428,7 @@ def scan_movie_source(source_path, type_of_scan):
         source_paths = auto_detect_sources(library_files)
         
     #walk source paths
-    progress.update(0, "Walking Source Paths")
+    progress.update(0, language(30121))
     movie_files = set(get_files(source_paths, progress))
     progress.close()
     
@@ -452,7 +450,7 @@ def scan_movie_source(source_path, type_of_scan):
         log_filename_path = xbmcplugin.getSetting(handle, "log_file_name")
 		
         if log_enabled == 'true' and os.path.exists(log_filename_path) == False:
-            xbmcgui.Dialog().ok("Log Path Not Found", "The log path does not exist")
+            xbmcgui.Dialog().ok(language(30122), language(30123))
         elif log_enabled == 'true':
             log_active = True
 			
@@ -464,7 +462,7 @@ def scan_movie_source(source_path, type_of_scan):
                 file.write("Missing Scan Results " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")) + "\n")
                 file.write("*********************************************************\n")
             except IOError as e:
-                xbmcgui.Dialog().ok("Log Path Error", "Error writing to the log path : " + full_log_path, str(sys.exc_info()[1]))
+                xbmcgui.Dialog().ok(language(30122), language(30124).format(full_log_path, str(sys.exc_info()[1])))
                 log_active = False
             
         for movie_file in missing:
@@ -482,19 +480,19 @@ def scan_movie_source(source_path, type_of_scan):
             file.close()
 		
     else:
-        addDirectoryItem("No Missing Items", isFolder=False, totalItems=1)
+        addDirectoryItem(language(30125), isFolder=False, totalItems=1)
                 
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
     global dirCount
     global fileCount
     global filesFound
-    count_text = "Processed : " + str(dirCount) + " Folders, " + str(fileCount) + "  Files, " + str(filesFound) + " Matches"
+    count_text = language(30106).format(str(dirCount), str(fileCount), str(filesFound))
     
     if log_active:
-        xbmcgui.Dialog().ok("Missing Scan Results", count_text, "Missing : " + str(missing_count), "Log : " + str(full_log_path))
+        xbmcgui.Dialog().ok(language(30126), count_text, language(30127).format(str(missing_count)), language(30128).format(str(full_log_path)))
     else:
-        xbmcgui.Dialog().ok("Missing Scan Results", count_text, "Missing From Library : " + str(missing_count))
+        xbmcgui.Dialog().ok(language(30126), count_text, language(30127).format(str(missing_count)))
     
 def show_source_list():
     source_paths = get_movie_sources()
@@ -505,99 +503,6 @@ def show_source_list():
         
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
 
-def version_cmp(version1, version2):
-    parts1 = [int(x) for x in version1.split('.')]
-    parts2 = [int(x) for x in version2.split('.')]
-
-    # fill up the shorter version with zeros ...
-    lendiff = len(parts1) - len(parts2)
-    if lendiff > 0:
-        parts2.extend([0] * lendiff)
-    elif lendiff < 0:
-        parts1.extend([0] * (-lendiff))
-
-    for i, p in enumerate(parts1):
-        ret = cmp(p, parts2[i])
-        if ret: return ret
-    return 0
-    
-def version_check():
-
-    CURRENT_VER = ADDON.getAddonInfo('version')
-    log( "Current Addon Version : " + CURRENT_VER )
-    
-    #try:
-    
-    f = urllib.urlopen("http://xbmc-missing-movie-search.googlecode.com/svn/trunk/version.txt" )
-    version = f.read()
-
-    log( "Remote Data : " + version )
-    bits = version.split('|')
-    
-    verBit = bits[0]
-    verUrl = bits[1]
-    log( "Remote Version : " + verBit )
-    log( "Remote URL     : " + verUrl )
-        
-    verMatch = version_cmp(verBit, CURRENT_VER)
-    log( "Version CMP Current : " + CURRENT_VER + " Online Ver : " + verBit + " Result : " + str(verMatch))
-    
-    if(verMatch > 0):
-        install_repo("plugin.video.mms", verUrl)
-    
-    #except:
-    #    print_exc()
-    
-    
-    
-def install_repo(repoName, repoURL):
-    continueInstall = True
-    dialogYesNo = xbmcgui.Dialog()
-    if dialogYesNo.yesno(repoName, "New version available", "Do you want to install it now?"):           
-        if continueInstall:
-            ri = RepoInstaller()
-                
-            newRepo = ri.download( repoURL )
-            log( "Addon Download Location : " + newRepo );
-    
-            if newRepo:
-                fp, ok = ri.install( newRepo )
-                log( "Install fp = " + str(fp) )
-                log( "Install ok = " + str(ok) )
-                xbmc.executebuiltin( 'UpdateLocalAddons' )
-                xbmc.sleep( 100 )
-                xbmc.executebuiltin( "ActivateWindow(Home)")
-
-                
-class RepoInstaller:
-    def download( self, url, destination=REPO_PACKAGE_DIR ):
-        try:
-            DIALOG_PROGRESS = xbmcgui.DialogProgress()
-            DIALOG_PROGRESS.create( "prog" )
-            destination = xbmc.translatePath( destination ) + os.path.basename( url )
-            
-            def _report_hook( count, blocksize, totalsize ):
-                percent = int( float( count * blocksize * 100 ) / totalsize )
-                DIALOG_PROGRESS.update( percent, "Downloading")
-                
-            log( "Downloading from : " + url )
-            log( "Downloading to   : " + destination )
-        
-            fp, h = urllib.urlretrieve( url, destination, _report_hook )
-            
-            log( "Download Result pf = " + str(fp) )
-            log( "Download Result h =  " + str(h) )
-            return fp
-        except:
-            print_exc()
-        DIALOG_PROGRESS.close()
-        return ""
-    
-    def install( self, filename ):
-        from resources.lib.extractor import extract
-        log( "Installing from : " + filename )
-        log( "Installing to   : " + xbmc.translatePath( REPO_INSTALL_DIR ) )
-        return extract( filename, xbmc.translatePath( REPO_INSTALL_DIR ) )
     
 # set up all the variables
 params = parameters_string_to_dict(sys.argv[2])

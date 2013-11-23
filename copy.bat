@@ -1,0 +1,1 @@
+xcopy /S /Y plugin.video.mms\* C:\Users\shaun\AppData\Roaming\XBMC\addons\plugin.video.mms\
