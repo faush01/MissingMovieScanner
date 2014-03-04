@@ -410,7 +410,8 @@ def get_missing(MovieList, FileList):
                 
         if found == False:
             missing.append(file)
-    
+
+    missing.sort()
     return missing
     
 def scan_movie_source(source_path, type_of_scan):
