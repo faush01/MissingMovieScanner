@@ -49,9 +49,7 @@ def clean_name(text):
 
     return text
     
-def get_movie_sources():    
-    log("get_movie_sources() called")
-    
+def get_movie_sources():
     jsonResult = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "Files.GetSources", "params": {"media": "video"}, "id": 1}')
     log("VideoLibrary.GetSources results:\n" + jsonResult)
     shares = eval(jsonResult)#json.loads(jsonResult)
@@ -66,9 +64,7 @@ def get_movie_sources():
     for s in shares:
         share_label = s['label']
         share_path = s['file']
-        
-        log("FOUND SOURCE: " + share_label + " - " + share_path)
-        
+
         if share_path.startswith('addons://'):
             log("DROPPING SOURCE: " + share_label + " - " + share_path)
         elif share_path.startswith('multipath://'):
@@ -78,14 +74,12 @@ def get_movie_sources():
 
             for b in parts:
                 if b:
-                    log("ADDING SOURCE: " + share_label + " - " + b)
                     share = {}
                     share['path'] = b
                     share['name'] = share_label
                     results.append(share)                
 
         else:
-            log("ADDING SOURCE: " + share_label + " - " + share_path)
             share = {}
             share['path'] = share_path
             share['name'] = share_label
@@ -101,8 +95,6 @@ def get_blacklist(blacklist_string):
         blackword = bit.strip().lower()
         if len(blackword) > 0:
             blacklist.append(blackword)
-            log("Adding Blacklist String : " + blackword)
-    
     return blacklist
 
 def get_extensions(ext_string):
@@ -112,8 +104,6 @@ def get_extensions(ext_string):
     for bit in bits:
         ext = bit.strip().lower()
         extensions.append(ext)
-        log("Adding Extension : " + ext)
-    
     return extensions
 
 
@@ -205,8 +195,6 @@ def walk_Path(path, walked_files, progress):
                 walked_files.append(file_name)
 
 def get_files(paths, progress):
-    log("get_files(path) called")
-    
     walked_files = []
     
     for path in paths:
@@ -367,14 +355,11 @@ def auto_detect_sources(library_files):
     
     for source in sources:
         source_paths_pre_select.append(source['path'])
-        log("Auto Select Source Path1 : " + source['path'])
-    
+
     # sort the source paths from longest to shortest
     # this is so we hit our nested paths first
     source_paths_pre_select = sorted(source_paths_pre_select, cmp=path_len_compare)
-    for source in source_paths_pre_select:
-        log("Auto Select Source Path2 : " + source)
-        
+
     # now iterate the library to count our source path uses
     source_paths_count = {}
     
