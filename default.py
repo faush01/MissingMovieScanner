@@ -16,7 +16,6 @@ language = __settings__.getLocalizedString
 LOG_ENABLED = False
 DEBUG_LOGGING = False
 handle = int(sys.argv[1])
-FILE_EXTENSIONS = []
 
 # plugin modes
 MODE_SCAN_SOURCE = 10
@@ -123,16 +122,16 @@ def get_extensions(ext_string):
     
     return extensions
 
-def file_has_extensions(filename, extensions):
-    name, extension = os.path.splitext(os.path.basename(filename))
-    name = name.lower()
-    extension = extension[1:].lower()
-    extensions = [ f.lower() for f in extensions ]
 
-    if extension == 'ifo' and name != 'video_ts':
-        return False
+def is_video_file(filename):
+    name, ext = os.path.splitext(filename)
+    return ext.lower() in FILE_EXTENSIONS
 
-    return extension in extensions
+
+def is_blacklisted_file_type(filename):
+    name, ext = os.path.splitext(filename)
+    return ext.lower() in BLACKLISTED_EXTENSIONS
+
 
 def file_contains_forbiden(filename):
     for blackword in BLACKLIST_STRINGS:
@@ -201,13 +200,16 @@ def walk_Path(path, walked_files, progress):
             walk_Path(file["file"], walked_files, progress)
         elif file['filetype'] == "file":
             fileCount += 1
-            if file_has_extensions(file["file"], FILE_EXTENSIONS) and file_contains_forbiden(file["file"]) == False:
+            filename = file["file"]
+            if is_video_file(filename) \
+                    and not is_blacklisted_file_type(filename) \
+                    and not file_contains_forbiden(filename):
                 filesFound += 1
-                log("WALKER ADDING FILE : " + file["file"])
+                log("WALKER ADDING FILE : " + filename)
                 file_name = file["file"]
                 #XBMC urlencodes the filename if it's in a .rar
                 if file_name.startswith('rar://'):
-                    file_name = urllib.unquote(file_name)                
+                    file_name = urllib.unquote(file_name)
                 walked_files.append(file_name)
 
 def get_files(paths, progress):
@@ -523,8 +525,10 @@ LOG_ENABLED = xbmcplugin.getSetting(handle, "custom_log_enabled") == "true"
 DEBUG_LOGGING = xbmcplugin.getSetting(handle, "debug_log_enabled") == "true"
 log("Missing Logging : " + str(LOG_ENABLED))
 log("Debug Logging : " + str(DEBUG_LOGGING))
-FILE_EXTENSIONS = get_extensions(xbmcplugin.getSetting(handle, "custom_file_extensions"))
+FILE_EXTENSIONS = xbmc.getSupportedMedia('video').decode('utf-8').split('|')
+BLACKLISTED_EXTENSIONS = xbmcplugin.getSetting(handle, "blacklisted_file_extensions").decode('utf-8').split('|')
 BLACKLIST_STRINGS = get_blacklist(xbmcplugin.getSetting(handle, "blacklist"))
+
 
 # Depending on the mode do stuff
 if not sys.argv[2]:
