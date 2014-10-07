@@ -14,7 +14,6 @@ __settings__ = xbmcaddon.Addon(id='plugin.video.mms')
 language = __settings__.getLocalizedString
 
 LOG_ENABLED = False
-DEBUG_LOGGING = False
 handle = int(sys.argv[1])
 
 # plugin modes
@@ -37,13 +36,8 @@ filesFound = 0
 #############################################################################################
 
 def log(line):
-    if DEBUG_LOGGING:
-        print "MMS : " + line#repr(line)
-        
-    #xbmc.log(line, 2)
-    #xbmc.log("Test", 0) #Debug
-    #xbmc.log("text", 1) #Info
-    #xbmc.log("Test", 2) #Notive
+    xbmc.log('[plugin.video.mms] ' + line, level=xbmc.LOGDEBUG)
+
 
 def clean_name(text):
     text = text.replace('%21', '!')
@@ -160,9 +154,7 @@ def walk_Path(path, walked_files, progress):
     # double slash the \ in the path
     path = path.replace("\\", "\\\\")
     rpcCall = "{\"jsonrpc\": \"2.0\", \"method\": \"Files.GetDirectory\", \"params\": {\"directory\": \"" + path + "\"}, \"id\": 1}"
-    #log("rpcCall: " + rpcCall)
     jsonResult = xbmc.executeJSONRPC(rpcCall)
-    #log("Files.GetDirectory results: " + jsonResult)
     
     # json.loads expects utf-8 but the conversion using unicode breaks stuff
     #jsonResult = unicode(jsonResult, 'utf-8', errors='ignore')
@@ -522,9 +514,7 @@ params = parameters_string_to_dict(sys.argv[2])
 mode = int(urllib.unquote_plus(params.get(PARAMETER_KEY_MODE, "0")))
 source = urllib.unquote_plus(params.get(PARAMETER_KEY_SOURCE, ""))
 LOG_ENABLED = xbmcplugin.getSetting(handle, "custom_log_enabled") == "true"
-DEBUG_LOGGING = xbmcplugin.getSetting(handle, "debug_log_enabled") == "true"
 log("Missing Logging : " + str(LOG_ENABLED))
-log("Debug Logging : " + str(DEBUG_LOGGING))
 FILE_EXTENSIONS = xbmc.getSupportedMedia('video').decode('utf-8').split('|')
 BLACKLISTED_EXTENSIONS = xbmcplugin.getSetting(handle, "blacklisted_file_extensions").decode('utf-8').split('|')
 BLACKLIST_STRINGS = get_blacklist(xbmcplugin.getSetting(handle, "blacklist"))

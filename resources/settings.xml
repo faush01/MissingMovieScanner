@@ -4,7 +4,6 @@
     <setting id="custom_log_enabled" type="bool" label="30012" default="false" />
 	<setting id="log_file_name" type="folder" label="30013" default="" />
 	<setting id="blacklist" type="text" label="30014" default="sample.,-trailer." />
-    <setting id="debug_log_enabled" type="bool" label="30015" default="false" />
     <setting id="blacklisted_file_extensions" type="text" label="30129" default=".bin|.dat" />
 </settings>
 
