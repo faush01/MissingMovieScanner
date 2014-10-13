@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import sys
 import xbmc
 import xbmcgui
@@ -8,13 +10,13 @@ import os
 import time
 import datetime
 import xbmcaddon
+from urlparse import parse_qs
 from traceback import print_exc
 
 __settings__ = xbmcaddon.Addon(id='plugin.video.mms')
 language = __settings__.getLocalizedString
 
 LOG_ENABLED = False
-DEBUG_LOGGING = False
 handle = int(sys.argv[1])
 
 # plugin modes
@@ -24,8 +26,8 @@ MODE_AUTO_TV_SOURCES = 30
 MODE_AUTO_MOVIE_SOURCES = 40
 
 # parameter keys
-PARAMETER_KEY_MODE = "mode"
-PARAMETER_KEY_SOURCE = "source"
+PARAMETER_KEY_MODE = b"mode"
+PARAMETER_KEY_SOURCE = b"source"
 
 # dir walker counters
 dirCount = 0
@@ -37,13 +39,13 @@ filesFound = 0
 #############################################################################################
 
 def log(line):
-    if DEBUG_LOGGING:
-        print "MMS : " + line#repr(line)
-        
-    #xbmc.log(line, 2)
-    #xbmc.log("Test", 0) #Debug
-    #xbmc.log("text", 1) #Info
-    #xbmc.log("Test", 2) #Notive
+    xbmc.log(('[plugin.video.mms] ' + line).encode('utf-8', errors='ignore'),
+             level=xbmc.LOGDEBUG)
+
+
+def jsonrpc(query):
+    return json.loads(xbmc.executeJSONRPC(json.dumps(query, encoding='utf-8')))
+
 
 def clean_name(text):
     text = text.replace('%21', '!')
@@ -55,13 +57,15 @@ def clean_name(text):
 
     return text
     
-def get_movie_sources():    
-    log("get_movie_sources() called")
-    
-    jsonResult = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "Files.GetSources", "params": {"media": "video"}, "id": 1}')
-    log("VideoLibrary.GetSources results:\n" + jsonResult)
-    shares = eval(jsonResult)#json.loads(jsonResult)
-    
+def get_movie_sources():
+    query = {
+        "jsonrpc": "2.0",
+        "method": "Files.GetSources",
+        "params": {"media": "video"},
+        "id": 1
+    }
+    shares = jsonrpc(query)
+
     shares = shares['result']
     shares = shares.get('sources')
     
@@ -72,9 +76,7 @@ def get_movie_sources():
     for s in shares:
         share_label = s['label']
         share_path = s['file']
-        
-        log("FOUND SOURCE: " + share_label + " - " + share_path)
-        
+
         if share_path.startswith('addons://'):
             log("DROPPING SOURCE: " + share_label + " - " + share_path)
         elif share_path.startswith('multipath://'):
@@ -84,14 +86,12 @@ def get_movie_sources():
 
             for b in parts:
                 if b:
-                    log("ADDING SOURCE: " + share_label + " - " + b)
                     share = {}
                     share['path'] = b
                     share['name'] = share_label
                     results.append(share)                
 
         else:
-            log("ADDING SOURCE: " + share_label + " - " + share_path)
             share = {}
             share['path'] = share_path
             share['name'] = share_label
@@ -107,8 +107,6 @@ def get_blacklist(blacklist_string):
         blackword = bit.strip().lower()
         if len(blackword) > 0:
             blacklist.append(blackword)
-            log("Adding Blacklist String : " + blackword)
-    
     return blacklist
 
 def get_extensions(ext_string):
@@ -118,8 +116,6 @@ def get_extensions(ext_string):
     for bit in bits:
         ext = bit.strip().lower()
         extensions.append(ext)
-        log("Adding Extension : " + ext)
-    
     return extensions
 
 
@@ -153,29 +149,19 @@ def walk_Path(path, walked_files, progress):
     
     count_text = language(30105).format(str(dirCount), str(fileCount))
     found_text = language(30107).format(str(filesFound))
-    hacked_path = language(30108).format(unicode(path, 'utf-8', errors='replace'))
-    progress.update(0, count_text, found_text, hacked_path)
+    progress.update(0, count_text, found_text, path)
     #time.sleep(5)
     
     # double slash the \ in the path
     path = path.replace("\\", "\\\\")
-    rpcCall = "{\"jsonrpc\": \"2.0\", \"method\": \"Files.GetDirectory\", \"params\": {\"directory\": \"" + path + "\"}, \"id\": 1}"
-    #log("rpcCall: " + rpcCall)
-    jsonResult = xbmc.executeJSONRPC(rpcCall)
-    #log("Files.GetDirectory results: " + jsonResult)
-    
-    # json.loads expects utf-8 but the conversion using unicode breaks stuff
-    #jsonResult = unicode(jsonResult, 'utf-8', errors='ignore')
-    #set_files = json.loads(jsonResult)
-    
-    set_files = []
+    query = {
+        "jsonrpc": "2.0",
+        "method": "Files.GetDirectory",
+        "params": {"directory": path},
+        "id": 1
+    }
+    set_files = jsonrpc(query)
 
-    try:
-        set_files = eval(jsonResult)
-    except:
-        log("Error Parsing GetDirectory() results : " + str(sys.exc_info()[0]))
-        return
-        
     if(len(set_files) == 0):
         return
     
@@ -213,8 +199,6 @@ def walk_Path(path, walked_files, progress):
                 walked_files.append(file_name)
 
 def get_files(paths, progress):
-    log("get_files(path) called")
-    
     walked_files = []
     
     for path in paths:
@@ -229,17 +213,6 @@ def get_files(paths, progress):
 # Utility Functions
 #############################################################################################
 
-def parameters_string_to_dict(parameters):
-    paramDict = {}
-    if parameters:
-        paramPairs = parameters[1:].split("&")
-        for paramsPair in paramPairs:
-            paramSplits = paramsPair.split('=')
-            if (len(paramSplits)) == 2:
-                log("Param " + paramSplits[0] + "=" + paramSplits[1])
-                paramDict[paramSplits[0]] = paramSplits[1]
-    return paramDict
-
 def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1):
     li = xbmcgui.ListItem(name)
     
@@ -251,8 +224,12 @@ def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1):
     #commands.append(( 'runother', 'XBMC.RunPlugin(plugin://video/otherplugin)', ))
     #commands.append(( "Scan", "ActivateWindow(videofiles, Movies)", ))#, '" + name + "')", ))
     li.addContextMenuItems(commands, replaceItems = True)
-    
-    url = sys.argv[0] + '?' + urllib.urlencode(parameters)
+
+    # encode parameter values in utf-8 first
+    utf8_params = dict(((key, unicode(value).encode('utf-8'))
+                        for key, value in parameters.items()))
+
+    url = sys.argv[0] + '?' + urllib.urlencode(utf8_params)
 
     if not isFolder:
         url = name
@@ -282,9 +259,13 @@ def get_library_files(type_of_scan):
 
     #Movies    
     if type_of_scan == 1 or type_of_scan == 0:
-        jsonResult = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["file", "trailer"]}, "id": 1}')
-        log("VideoLibrary.GetMovies results: " + jsonResult)
-        result = eval(jsonResult)#json.loads(jsonResult)
+        query = {
+            "jsonrpc": "2.0",
+            "method": "VideoLibrary.GetMovies",
+            "params": {"properties": ["file", "trailer"]},
+            "id": 1
+        }
+        result = jsonrpc(query)
         movies = result['result']
         
         movies = movies.get('movies')
@@ -306,9 +287,13 @@ def get_library_files(type_of_scan):
 	
 	#TV Shows
     if type_of_scan == 2 or type_of_scan == 0:
-        jsonResult = xbmc.executeJSONRPC('{"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodes", "params": {"properties": ["file"]}, "id": 1}')
-        log("VideoLibrary.GetEpisodes results: " + jsonResult)
-        result = eval(jsonResult)#json.loads(jsonResult)
+        query = {
+            "jsonrpc": "2.0",
+            "method": "VideoLibrary.GetEpisodes",
+            "params": {"properties": ["file"]},
+            "id": 1
+        }
+        result = jsonrpc(query)
         tvshows = result['result']
         tvshows = tvshows.get('episodes')
         
@@ -324,9 +309,13 @@ def get_library_files(type_of_scan):
     for f in media_files:
 
         if f.startswith("videodb://"):
-            rpcCall = "{\"jsonrpc\": \"2.0\", \"method\": \"Files.GetDirectory\", \"params\": {\"directory\": \"" + f + "\"}, \"id\": 1}"
-            rpc_result = xbmc.executeJSONRPC(rpcCall)
-            set_files = eval(rpc_result)#json.loads(rpc_result)
+            query = {
+                "jsonrpc": "2.0",
+                "method": "Files.GetDirectory",
+                "params": {"directory": f },
+                "id": 1
+            }
+            set_files = jsonrpc(query)
 
             sub_files = []
             sub_trailers =  []
@@ -375,14 +364,11 @@ def auto_detect_sources(library_files):
     
     for source in sources:
         source_paths_pre_select.append(source['path'])
-        log("Auto Select Source Path1 : " + source['path'])
-    
+
     # sort the source paths from longest to shortest
     # this is so we hit our nested paths first
     source_paths_pre_select = sorted(source_paths_pre_select, cmp=path_len_compare)
-    for source in source_paths_pre_select:
-        log("Auto Select Source Path2 : " + source)
-        
+
     # now iterate the library to count our source path uses
     source_paths_count = {}
     
@@ -459,8 +445,8 @@ def scan_movie_source(source_path, type_of_scan):
         #missing.extend(list(movie_files.difference(library_files)))
 
         #log the missing to the log file
-        log_enabled = xbmcplugin.getSetting(handle, "custom_log_enabled")
-        log_filename_path = xbmcplugin.getSetting(handle, "log_file_name")
+        log_enabled = xbmcplugin.getSetting(handle, "custom_log_enabled").decode('utf-8')
+        log_filename_path = xbmcplugin.getSetting(handle, "log_file_name").decode('utf-8')
 		
         if log_enabled == 'true' and os.path.exists(log_filename_path) == False:
             xbmcgui.Dialog().ok(language(30122), language(30123))
@@ -470,7 +456,7 @@ def scan_movie_source(source_path, type_of_scan):
         if log_active:
             try:
                 full_log_path = log_filename_path + "missing.txt"
-                file = open(full_log_path, "a")
+                file = open(full_log_path.encode('utf-8'), "a")
                 file.write("*********************************************************\n")
                 file.write("Missing Scan Results " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")) + "\n")
                 file.write("*********************************************************\n")
@@ -503,7 +489,7 @@ def scan_movie_source(source_path, type_of_scan):
     count_text = language(30106).format(str(dirCount), str(fileCount), str(filesFound))
     
     if log_active:
-        xbmcgui.Dialog().ok(language(30126), count_text, language(30127).format(str(missing_count)), language(30128).format(str(full_log_path)))
+        xbmcgui.Dialog().ok(language(30126), count_text, language(30127).format(str(missing_count)), language(30128).format(full_log_path))
     else:
         xbmcgui.Dialog().ok(language(30126), count_text, language(30127).format(str(missing_count)))
     
@@ -518,16 +504,14 @@ def show_source_list():
 
     
 # set up all the variables
-params = parameters_string_to_dict(sys.argv[2])
-mode = int(urllib.unquote_plus(params.get(PARAMETER_KEY_MODE, "0")))
-source = urllib.unquote_plus(params.get(PARAMETER_KEY_SOURCE, ""))
-LOG_ENABLED = xbmcplugin.getSetting(handle, "custom_log_enabled") == "true"
-DEBUG_LOGGING = xbmcplugin.getSetting(handle, "debug_log_enabled") == "true"
+params = parse_qs(sys.argv[2].lstrip(b'?'))
+mode = int(urllib.unquote_plus(params[PARAMETER_KEY_MODE][0])) if PARAMETER_KEY_MODE in params else 0
+source = urllib.unquote_plus(params[PARAMETER_KEY_SOURCE][0]).decode('utf-8') if PARAMETER_KEY_SOURCE in params else ""
+LOG_ENABLED = xbmcplugin.getSetting(handle, "custom_log_enabled").decode('utf-8') == "true"
 log("Missing Logging : " + str(LOG_ENABLED))
-log("Debug Logging : " + str(DEBUG_LOGGING))
 FILE_EXTENSIONS = xbmc.getSupportedMedia('video').decode('utf-8').split('|')
 BLACKLISTED_EXTENSIONS = xbmcplugin.getSetting(handle, "blacklisted_file_extensions").decode('utf-8').split('|')
-BLACKLIST_STRINGS = get_blacklist(xbmcplugin.getSetting(handle, "blacklist"))
+BLACKLIST_STRINGS = get_blacklist(xbmcplugin.getSetting(handle, "blacklist").decode('utf-8'))
 
 
 # Depending on the mode do stuff
