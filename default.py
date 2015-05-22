@@ -12,6 +12,7 @@ import datetime
 import xbmcaddon
 from urlparse import parse_qs
 from traceback import print_exc
+import codecs
 
 __settings__ = xbmcaddon.Addon(id='plugin.video.mms')
 language = __settings__.getLocalizedString
@@ -438,7 +439,7 @@ def scan_movie_source(source_path, type_of_scan):
     missing = []
     
     missing = get_missing(library_files, movie_files)
-    
+
     if len(missing) > 0:
         #if not library_files.issuperset(movie_files):
         #log("Adding missing library items to list for souce path: " + source_path)
@@ -447,40 +448,31 @@ def scan_movie_source(source_path, type_of_scan):
         #log the missing to the log file
         log_enabled = xbmcplugin.getSetting(handle, "custom_log_enabled").decode('utf-8')
         log_filename_path = xbmcplugin.getSetting(handle, "log_file_name").decode('utf-8')
-		
+
         if log_enabled == 'true' and os.path.exists(log_filename_path) == False:
             xbmcgui.Dialog().ok(language(30122), language(30123))
         elif log_enabled == 'true':
-            log_active = True
-			
-        if log_active:
             try:
                 full_log_path = log_filename_path + "missing.txt"
-                file = open(full_log_path.encode('utf-8'), "a")
-                file.write("*********************************************************\n")
-                file.write("Missing Scan Results " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")) + "\n")
-                file.write("*********************************************************\n")
+                with codecs.open(full_log_path.encode('utf-8'), "a", encoding='utf-8') as file:
+                    file.write("*********************************************************\n")
+                    file.write("Missing Scan Results " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M")) + "\n")
+                    file.write("*********************************************************\n")
+                    for movie_file in missing:
+                        # get the end of the filename without the extension
+                        if os.path.splitext(movie_file.lower())[0].endswith("trailer"):
+                            log(movie_file + " is a trailer and will be ignored!")
+                        else:
+                            log("Adding missing item: " + movie_file)
+                            file.write(movie_file + "\n")
+
+                            missing_count += 1
+                            addDirectoryItem(movie_file, isFolder=False, totalItems=len(missing))
+                file.close()
             except IOError as e:
                 xbmcgui.Dialog().ok(language(30122), language(30124).format(full_log_path, str(sys.exc_info()[1])))
-                log_active = False
-            
-        for movie_file in missing:
-            # get the end of the filename without the extension
-            if os.path.splitext(movie_file.lower())[0].endswith("trailer"):
-                log(movie_file + " is a trailer and will be ignored!") 
-            else:
-                log("Adding missing item: " + movie_file)
-                missing_count += 1
-                addDirectoryItem(movie_file, isFolder=False, totalItems=len(missing))
-                if log_active:
-                    file.write(movie_file + "\n")
-
-        if log_active:
-            file.close()
-		
     else:
         addDirectoryItem(language(30125), isFolder=False, totalItems=1)
-                
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
     global dirCount
