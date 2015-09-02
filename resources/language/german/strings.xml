@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<strings>
+
+    <string id="30010">Einstellungen</string>
+    <string id="30011">Dateierweiterungen</string>
+    <string id="30012">Logdatei fehlender Einträge erstellen</string>
+	<string id="30013">Pfad zur Logdatei</string>
+    <string id="30014">ausgeschlossene Begriffe</string>
+    <string id="30015">Debug-Protokollierung</string>
+
+    <string id="30105">Durchsucht: {0} Verzeichnisse {1} Dateien</string>
+    <string id="30106">Abgearbeitet: {0} Verzeichnisse, {1}  Dateien, {2} Einträge</string>
+    <string id="30107">gefundene Dateien: {0}</string>
+    <string id="30108">Pfad: {0}</string>
+
+    <string id="30109">Fehler im Quellverzeichnis</string>
+    <string id="30110">Fehler beim Durchlaufen des Quellverzeichnisses</string>
+
+    <string id="30111">Filmquellen automatisch scannen</string>
+    <string id="30112">TV-Serien automatisch scannen</string>
+    <string id="30113">Zeige Quellverzeichnisse</string>
+
+    <string id="30114">Keine Filme gefunden</string>
+    <string id="30115">Es sind keine Filme in Deiner Bibliothek vorhanden</string>
+
+    <string id="30116">Keine TV-Serien gefunden</string>
+    <string id="30117">Es sind keine TV-Serien in Deiner Bibliothek vorhanden</string>
+
+    <string id="30118">Scan läuft</string>
+    <string id="30119">Scan gestarted</string>
+
+    <string id="30120">Lese Bibliothekseinträge</string>
+    <string id="30121">Durchlaufe Media Verzeichnisse</string>
+
+    <string id="30122">Protokollierungsfehler</string>
+    <string id="30123">Der Pfad zur Protokolldatei existiert nicht</string>
+    <string id="30124">Fehler beim Schreiben im Pfad zur Protokolldatei: {0}</string>
+
+    <string id="30125">Keine fehlenden Einträge vorhanden</string>
+
+    <string id="30126">Ergebnisse der Durchsuchung</string>
+    <string id="30127">Fehlende Einträge: {0}</string>
+    <string id="30128">Protokoll: {0}</string>
+    <string id="30129">ausgelassene Dateierweiterungen</string>
+</strings>
+

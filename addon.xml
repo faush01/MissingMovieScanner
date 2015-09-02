@@ -10,11 +10,13 @@
     <forum>http://forum.xbmc.org/showthread.php?tid=118263</forum>
     <license>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</license>
     <platform>all</platform>
-    <language>en</language>
+    <language>en de</language>
     <website></website>
     <email></email>
     <source></source>  
     <summary lang="en">Shows missing library items.</summary>
+    <summary lang="de">Zeigt fehlende Bibliothekseinträge an.</summary>
     <description lang="en">Scans media source folders for files that are missing from your media library. View the settings for more options.</description>
+    <description lang="de">Durchsucht die Quellverzeichnisse Deiner Mediabibliothek nach fehlenden oder nicht erfassten Einträgen. Mehr Optionen findest Du in den Settings.</description>
   </extension>
 </addon>
